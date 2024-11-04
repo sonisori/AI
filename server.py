@@ -1,7 +1,9 @@
+from typing import List
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import tensorflow as tf
 import numpy as np
+from pydantic import BaseModel
 
 app = Flask(__name__)
 CORS(app)
@@ -10,11 +12,22 @@ CORS(app)
 # def hello_world():
 #     return 'Hello World!'
 
+
+class Landmark(BaseModel):
+    x: float
+    y: float
+    z: float
+    visibility: float
+    
+class PredictLandmarkDto(BaseModel):
+    landmark: List[Landmark]
+    
+
 # 모델 로드
 model = tf.keras.models.load_model('models/model.h5')
 
 # 데이터 전처리 함수
-def preprocess_data(res):
+def preprocess_data(res: PredictLandmarkDto):
     joint = np.zeros((21, 4))
     for j, lm in enumerate(res.landmark):
         joint[j] = [lm.x, lm.y, lm.z, lm.visibility]
@@ -42,7 +55,8 @@ def preprocess_data(res):
 def predict():
     try:
         data = request.get_json()
-        processed_data = preprocess_data(data)
+        safe_json = PredictLandmarkDto(**data)
+        processed_data = preprocess_data(safe_json)
         prediction = model.predict(processed_data)
         return jsonify({'prediction': prediction.tolist()})
     except Exception as e:
