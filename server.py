@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, session
 from flask_socketio import SocketIO, emit
 import numpy as np
 import tensorflow as tf
@@ -9,9 +9,7 @@ seq_length = 30
 
 model = tf.keras.models.load_model('models/model.keras')
 
-seq = []
-action_seq = []
-words_set = []
+
 
 # Flask 및 SocketIO 설정
 app = Flask(__name__)
@@ -22,9 +20,19 @@ socketio = SocketIO(app,cors_allowed_origins="*")
 def hello_world():
     return ''
 
+@socketio.on('connect')
+def create_session():
+    session['seq'] = []
+    session['action_seq'] = []
+    session['words_set'] = []
+
 # 클라이언트가 'predict' 이벤트로 데이터를 보낼 때 실행
 @socketio.on('predict')
 def handle_predict(data):
+    seq = session['seq']
+    action_seq = session['action_seq']
+    words_set = session['words_set']
+    
     try:
         for d in data:
             d = preprocess_data_server(d)
@@ -54,9 +62,9 @@ def handle_predict(data):
 
             if this_action not in words_set and this_action != "?":  # 중복 체크
                 words_set.append(this_action)
+                # 예측 결과를 리스트로 변환 후 클라이언트에게 전송
+                emit('prediction_result', {'prediction': words_set})
         print("result: ",words_set)
-        # 예측 결과를 리스트로 변환 후 클라이언트에게 전송
-        emit('prediction_result', {'prediction': words_set})
 
     except Exception as e:
         # 에러 발생 시 에러 메시지를 클라이언트에 전송
