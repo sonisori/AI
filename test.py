@@ -3,30 +3,7 @@ import mediapipe as mp
 import numpy as np
 from tensorflow.keras.models import load_model
 import time
-from get_a_hand_data import *
-
-def preprocess_data(res):
-    joint = np.zeros((21, 4))
-    for j, lm in enumerate(res.landmark):
-        joint[j] = [lm.x, lm.y, lm.z, lm.visibility]
-
-    # Compute angles between joints
-    v1 = joint[[0, 1, 2, 3, 0, 5, 6, 7, 0, 9, 10, 11, 0, 13, 14, 15, 0, 17, 18, 19], :3]  # Parent joint
-    v2 = joint[[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], :3]  # Child joint
-    v = v2 - v1  # [20, 3]
-
-    # Normalize v
-    v = v / np.linalg.norm(v, axis=1)[:, np.newaxis]  # v의 길이로 나눠줌
-
-    # Get angle using arcos of dot product
-    angle = np.arccos(np.einsum('nt,nt->n',
-                                v[[0, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14, 16, 17, 18], :],
-                                v[[1, 2, 3, 5, 6, 7, 9, 10, 11, 13, 14, 15, 17, 18, 19], :]))  # [15,] 15개의 각도 구함
-
-    angle = np.degrees(angle)  # Convert radian to degree
-
-    d = np.concatenate([joint.flatten(), angle])  # data concat
-    return d
+from preprocess_data import *
 
 # 웹캠 정보
 img_width = 1920
@@ -42,10 +19,10 @@ fontScale = 3
 color = (0, 255, 0)
 thickness = 4
 
-actions = ['want','hello','reservation','hospital']
+actions = ['1','2']
 seq_length = 30
 
-model = load_model('models/model.h5')
+model = load_model('models/model.keras')
 
 # MediaPipe hands model
 mp_hands = mp.solutions.hands
@@ -86,7 +63,7 @@ while cap.isOpened(): # 카메라 열려 있는 동안
 
     if result.multi_hand_landmarks is not None: # 손을 인식했으면
         for res in result.multi_hand_landmarks:
-            d = preprocess_data(res)
+            d = preprocess_data_test(res)
             seq.append(d)
 
             mp_drawing.draw_landmarks(img, res, mp_hands.HAND_CONNECTIONS)
@@ -96,11 +73,9 @@ while cap.isOpened(): # 카메라 열려 있는 동안
 
             input_data = np.expand_dims(np.array(seq[-seq_length:], dtype=np.float32), axis=0)
 
-            # 결과 판단 위해 y_pred에 뽑아내기
             y_pred = model.predict(input_data).squeeze()
-
-            i_pred = int(np.argmax(y_pred)) # index 추출
-            conf = y_pred[i_pred] # confidence 추출
+            i_pred = int(np.argmax(y_pred))
+            conf = y_pred[i_pred]
 
             if conf < 0.9: # 90이하면 포즈 취하지 않은 걸로 생각
                 continue
@@ -117,12 +92,9 @@ while cap.isOpened(): # 카메라 열려 있는 동안
             if action_seq[-1] == action_seq[-2] == action_seq[-3]:
                 this_action = action
 
-
             if this_action not in words_set and this_action != "?":  # 중복 체크
                 words_set.append(this_action)
 
-            # print(this_action)
-            # print(words_set)
             print(img.shape)
             cv2.putText(img, "now: "+this_action, (x_word,y_word), fontFace, fontScale, color, thickness)
 

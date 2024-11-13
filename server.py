@@ -1,55 +1,67 @@
-from flask import Flask, request, jsonify
-import tensorflow as tf
+from flask import Flask
+from flask_socketio import SocketIO, emit
 import numpy as np
+import tensorflow as tf
+from preprocess_data import *
 
+actions = ['hello','bye']
+seq_length = 30
+
+model = tf.keras.models.load_model('models/model.keras')
+
+seq = []
+action_seq = []
+words_set = []
+
+# Flask 및 SocketIO 설정
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'mysecret'
+socketio = SocketIO(app)
 
-# @app.route('/')
-# def hello_world():
-#     return 'Hello World!'
+@app.route('/')
+def hello_world():
+    return ''
 
-# 모델 로드
-model = tf.keras.models.load_model('models/model.h5')
-
-# 데이터 전처리 함수
-def preprocess_data(res):
-    joint = np.zeros((21, 4))
-    for j, lm in enumerate(res.landmark):
-        joint[j] = [lm.x, lm.y, lm.z, lm.visibility]
-
-    # Compute angles between joints
-    v1 = joint[[0, 1, 2, 3, 0, 5, 6, 7, 0, 9, 10, 11, 0, 13, 14, 15, 0, 17, 18, 19], :3]  # Parent joint
-    v2 = joint[[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], :3]  # Child joint
-    v = v2 - v1  # [20, 3]
-
-    # Normalize v
-    v = v / np.linalg.norm(v, axis=1)[:, np.newaxis]  # v의 길이로 나눠줌
-
-    # Get angle using arcos of dot product
-    angle = np.arccos(np.einsum('nt,nt->n',
-                                v[[0, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14, 16, 17, 18], :],
-                                v[[1, 2, 3, 5, 6, 7, 9, 10, 11, 13, 14, 15, 17, 18, 19], :]))  # [15,] 15개의 각도 구함
-
-    angle = np.degrees(angle)  # Convert radian to degree
-
-    d = np.concatenate([joint.flatten(), angle])  # data concat
-    return d
-
-# 예측
-@app.route('/predict', methods=['POST'])
-def predict():
+# 클라이언트가 'predict' 이벤트로 데이터를 보낼 때 실행
+@socketio.on('predict')
+def handle_predict(data):
     try:
-        data = request.get_json()
-        processed_data = preprocess_data(data)
-        prediction = model.predict(processed_data)
-        return jsonify({'prediction': prediction.tolist()})
+        for d in data:
+            d = preprocess_data_server(d)
+            seq.append(d)
+
+            if len(seq) < seq_length:
+                continue
+
+            input_data = np.expand_dims(np.array(seq[-seq_length:], dtype=np.float32), axis=0)
+
+            y_pred = model.predict(input_data).squeeze()
+            i_pred = int(np.argmax(y_pred))
+            conf = y_pred[i_pred]
+
+            if conf < 0.9:
+                continue
+
+            action = actions[i_pred]
+            action_seq.append(action)
+
+            if len(action_seq) < 3:
+                continue
+
+            this_action = '?'
+            if action_seq[-1] == action_seq[-2] == action_seq[-3]:
+                this_action = action
+
+            if this_action not in words_set and this_action != "?":  # 중복 체크
+                words_set.append(this_action)
+        print("result: ",words_set)
+        # 예측 결과를 리스트로 변환 후 클라이언트에게 전송
+        emit('prediction_result', {'prediction': words_set})
+
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        # 에러 발생 시 에러 메시지를 클라이언트에 전송
+        emit('error', {'error': str(e)})
 
-# 서버 상태 체크
-@app.route('/health', methods=['GET'])
-def health_check():
-    return jsonify({'status': 'healthy'}), 200
-
+# 서버 실행
 if __name__ == '__main__':
-    app.run(debug=True) # debug=True로 수정 사항 실시간으로 반영
+    socketio.run(app, host='0.0.0.0', port=5001, debug=True, allow_unsafe_werkzeug=True)
