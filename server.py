@@ -63,7 +63,7 @@ def handle_predict(data):
             if this_action not in words_set and this_action != "?":  # 중복 체크
                 words_set.append(this_action)
                 # 예측 결과를 리스트로 변환 후 클라이언트에게 전송
-                emit('prediction_result', {'prediction': words_set})
+                emit('prediction_result', {'prediction': words_set,'appended':this_action})
         print("result: ",words_set)
 
     except Exception as e:
