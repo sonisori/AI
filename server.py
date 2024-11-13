@@ -16,7 +16,7 @@ words_set = []
 # Flask 및 SocketIO 설정
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'mysecret'
-socketio = SocketIO(app)
+socketio = SocketIO(app,cors_allowed_origins="*")
 
 @app.route('/')
 def hello_world():
