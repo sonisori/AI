@@ -2,8 +2,8 @@ from flask import Flask, session
 from flask_socketio import SocketIO, emit
 import numpy as np
 import tensorflow as tf
+import mysql.connector
 
-actions = ['hello','bye']
 seq_length = 30
 
 model = tf.keras.models.load_model('../../models/model.keras')
@@ -30,6 +30,26 @@ def preprocess_data_server(res):
 
     return d
 
+def get_words_by_ids(id_list):
+    connection = mysql.connector.connect(
+        host='your_host',  # 예: 'localhost' 또는 '127.0.0.1'
+        user='your_user',  # 사용자 이름
+        password='your_password',  # 비밀번호
+        database='sonisori'  # 데이터베이스 이름
+    )
+
+    cursor = connection.cursor()
+
+    id_tuple = tuple(id_list)
+    query = f"SELECT id, word FROM sign_words WHERE id IN ({','.join(['%s'] * len(id_tuple))})"
+    cursor.execute(query, id_tuple)
+    result = {row[0]: row[1] for row in cursor.fetchall()}
+
+    cursor.close()
+    connection.close()
+
+    return [result.get(id_value, None) for id_value in id_list]
+
 # Flask 및 SocketIO 설정
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'mysecret'
@@ -43,15 +63,17 @@ def hello_world():
 def create_session():
     session['seq'] = []
     session['action_seq'] = []
-    session['words_set'] = []
+    session['id_list'] = []
+    session['word_list'] = []
 
 # 클라이언트가 'predict' 이벤트로 데이터를 보낼 때 실행
 @socketio.on('predict')
 def handle_predict(data):
     seq = session['seq']
     action_seq = session['action_seq']
-    words_set = session['words_set']
-    
+    id_list = session['id_list']
+    word_list = session['word_list']
+
     try:
         for d in data:
             d = preprocess_data_server(d)
@@ -69,7 +91,7 @@ def handle_predict(data):
             if conf < 0.9:
                 continue
 
-            action = actions[i_pred]
+            action = i_pred
             action_seq.append(action)
 
             if len(action_seq) < 3:
@@ -79,11 +101,14 @@ def handle_predict(data):
             if action_seq[-1] == action_seq[-2] == action_seq[-3]:
                 this_action = action
 
-            if this_action not in words_set and this_action != "?":  # 중복 체크
-                words_set.append(this_action)
+            if this_action not in id_list and this_action != "?":  # 중복 체크
+                id_list.append(this_action)
+                # word_list = get_words_by_ids(id_list)
                 # 예측 결과를 리스트로 변환 후 클라이언트에게 전송
-                emit('prediction_result', {'prediction': words_set,'appended':this_action})
-        print("result: ",words_set)
+                emit('prediction_result', {'prediction': id_list,'appended':this_action}) # $$$
+                # emit('prediction_result', {'prediction': word_list,'appended':this_action}) # ***
+        print("result: ", id_list) # $$$
+        # print("result: ", word_list) # ***
 
     except Exception as e:
         # 에러 발생 시 에러 메시지를 클라이언트에 전송
