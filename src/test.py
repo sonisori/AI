@@ -19,7 +19,6 @@ fontScale = 3
 color = (0, 255, 0)
 thickness = 4
 
-actions = ['1','2']
 seq_length = 30
 
 model = load_model('models/model.keras')
@@ -62,7 +61,10 @@ while cap.isOpened(): # 카메라 열려 있는 동안
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR) # 이미지 출력을 위해 다시 바꿔주기
 
     if result.multi_hand_landmarks is not None: # 손을 인식했으면
+        # print("result: ", result.multi_hand_landmarks)
+        # print("result: ", type(result))
         for res in result.multi_hand_landmarks:
+            # print("res: ", res)
             d = preprocess_data_test(res)
             seq.append(d)
 
@@ -76,32 +78,37 @@ while cap.isOpened(): # 카메라 열려 있는 동안
             y_pred = model.predict(input_data).squeeze()
             i_pred = int(np.argmax(y_pred))
             conf = y_pred[i_pred]
-
-            if conf < 0.9: # 90이하면 포즈 취하지 않은 걸로 생각
+            print(conf)
+            if conf < 0.5: # 90이하면 포즈 취하지 않은 걸로 생각
                 continue
 
             # 90 넘으면
-            action = actions[i_pred] # action 저장
+            action = i_pred # action 저장
             action_seq.append(action)
 
-            if len(action_seq) < 3:
+            if len(action_seq) < 9:
                 continue
 
             this_action = '?' # 3번 반복되지 않으면 ? 출력
             # action 판단 로직: 마지막 action 3개가 전부 동일할 때 유효한 action이라고 판단 -> 오류 줄임
-            if action_seq[-1] == action_seq[-2] == action_seq[-3]:
+            if action_seq[-1] == action_seq[-2] == action_seq[-3] == action_seq[-4] == action_seq[-5] == action_seq[-6] == action_seq[-7] == action_seq[-8] :
                 this_action = action
 
             if this_action not in words_set and this_action != "?":  # 중복 체크
                 words_set.append(this_action)
 
             print(img.shape)
-            cv2.putText(img, "now: "+this_action, (x_word,y_word), fontFace, fontScale, color, thickness)
+            cv2.putText(img, "now: "+ str(this_action), (x_word,y_word), fontFace, fontScale, color, thickness)
 
 
     cv2.putText(img, "now: ", (x_word,y_word), fontFace, fontScale, color, thickness)
     words_string = ", ".join(map(str, words_set))
     cv2.putText(img, words_string, (x_word_set,y_word_set), fontFace, fontScale, color, thickness)
+
+    # print("type: ", type(words_set))
+    # print(words_set)
+    # type: <class 'list'>
+    # ['6', '7']
 
     cv2.imshow('img', img)
     if cv2.waitKey(1) == ord('q'):

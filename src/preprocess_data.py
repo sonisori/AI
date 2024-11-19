@@ -22,7 +22,7 @@ def preprocess_data_train(res, label):
     angle_label = np.append(angle_label, label)  # label에 idx 넣어주기
 
     # 랜드마크 데이터와 각도 데이터를 하나로 합침
-    d = np.concatenate([joint.flatten(), angle_label])
+    d = np.concatenate([joint.flatten()*100, angle_label])
     # print(d.shape)
     # d.shape -> 79 (21*3(landmark) + 15(angle) + 1(label))
     return d
@@ -47,7 +47,7 @@ def preprocess_data_test(res):
 
     angle = np.degrees(angle)  # Convert radian to degree
 
-    d = np.concatenate([joint.flatten(), angle])  # data concat
+    d = np.concatenate([joint.flatten()*100, angle])  # data concat
 
     return d
 
@@ -69,6 +69,6 @@ def preprocess_data_server(res):
 
     angle = np.degrees(angle)  # Convert radian to degree
 
-    d = np.concatenate([joint.flatten(), angle])  # data concat
+    d = np.concatenate([joint.flatten()*100, angle])  # data concat
 
     return d
