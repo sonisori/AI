@@ -86,12 +86,12 @@ while cap.isOpened(): # 카메라 열려 있는 동안
             action = i_pred # action 저장
             action_seq.append(action)
 
-            if len(action_seq) < 9:
+            if len(action_seq) < 11:
                 continue
 
             this_action = '?' # 3번 반복되지 않으면 ? 출력
             # action 판단 로직: 마지막 action 3개가 전부 동일할 때 유효한 action이라고 판단 -> 오류 줄임
-            if action_seq[-1] == action_seq[-2] == action_seq[-3] == action_seq[-4] == action_seq[-5] == action_seq[-6] == action_seq[-7] == action_seq[-8] :
+            if action_seq[-1] == action_seq[-2] == action_seq[-3] == action_seq[-4] == action_seq[-5] == action_seq[-6] == action_seq[-7] == action_seq[-8] == action_seq[-9] == action_seq[-10]:
                 this_action = action
 
             if this_action not in words_set and this_action != "?":  # 중복 체크
