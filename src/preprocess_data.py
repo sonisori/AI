@@ -1,5 +1,6 @@
 import numpy as np
 
+w = 500
 def preprocess_data_train(res, label):
     joint = np.zeros((21, 3))
     for j, lm in enumerate(res.landmark):  # 각 랜드마크에 대해
@@ -22,7 +23,7 @@ def preprocess_data_train(res, label):
     angle_label = np.append(angle_label, label)  # label에 idx 넣어주기
 
     # 랜드마크 데이터와 각도 데이터를 하나로 합침
-    d = np.concatenate([joint.flatten()*400, angle_label])
+    d = np.concatenate([joint.flatten()*w, angle_label])
     # print(d.shape)
     # d.shape -> 79 (21*3(landmark) + 15(angle) + 1(label))
     return d
@@ -47,7 +48,7 @@ def preprocess_data_test(res):
 
     angle = np.degrees(angle)  # Convert radian to degree
 
-    d = np.concatenate([joint.flatten()*400, angle])  # data concat
+    d = np.concatenate([joint.flatten()*w, angle])  # data concat
 
     return d
 
@@ -69,6 +70,6 @@ def preprocess_data_server(res):
 
     angle = np.degrees(angle)  # Convert radian to degree
 
-    d = np.concatenate([joint.flatten()*400, angle])  # data concat
+    d = np.concatenate([joint.flatten()*w, angle])  # data concat
 
     return d

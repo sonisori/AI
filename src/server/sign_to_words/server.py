@@ -26,7 +26,7 @@ def preprocess_data_server(res):
 
     angle = np.degrees(angle)  # Convert radian to degree
 
-    d = np.concatenate([joint.flatten()*400, angle])  # data concat
+    d = np.concatenate([joint.flatten()*500, angle])  # data concat
 
     return d
 
@@ -88,17 +88,17 @@ def handle_predict(data):
             i_pred = int(np.argmax(y_pred))
             conf = y_pred[i_pred]
 
-            if conf < 0.9:
+            if conf < 0.8:
                 continue
 
             action = i_pred
             action_seq.append(action)
 
-            if len(action_seq) < 11:
+            if len(action_seq) < 15:
                 continue
 
             this_action = '?'
-            if action_seq[-1] == action_seq[-2] == action_seq[-3] == action_seq[-4] == action_seq[-5] == action_seq[-6] == action_seq[-7] == action_seq[-8] == action_seq[-9] == action_seq[-10]:
+            if action_seq[-1] == action_seq[-2] == action_seq[-3] == action_seq[-4] == action_seq[-5] == action_seq[-6] == action_seq[-7] == action_seq[-8] == action_seq[-9] == action_seq[-10] == action_seq[-11] == action_seq[-12] == action_seq[-13] == action_seq[-14] == action_seq[-15]:
                 this_action = action
 
             if this_action not in id_list and this_action != "?":  # 중복 체크
