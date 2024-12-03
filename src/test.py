@@ -11,9 +11,10 @@ img_height = 1080
 
 # 텍스트 화면에 출력시 사용할 정보
 x_word = 50
+
 y_word = 100
-x_word_set = 50
-y_word_set = img_height - 50
+x_word_list = 50
+y_word_list = img_height - 50
 fontFace = cv2.FONT_HERSHEY_SIMPLEX
 fontScale = 3
 color = (0, 255, 0)
@@ -41,7 +42,7 @@ action_seq = []
 frame_count = 0
 start_time = time.time()
 
-words_set = []
+words_list = []
 
 while cap.isOpened(): # 카메라 열려 있는 동안
     ret, img = cap.read() # 한 프레임씩 읽기
@@ -92,15 +93,15 @@ while cap.isOpened(): # 카메라 열려 있는 동안
             if action_seq[-1] == action_seq[-2] == action_seq[-3] == action_seq[-4] == action_seq[-5] == action_seq[-6] == action_seq[-7] == action_seq[-8] == action_seq[-9] == action_seq[-10] == action_seq[-11] == action_seq[-12] == action_seq[-13] == action_seq[-14] == action_seq[-15]:
                 this_action = action
 
-            if this_action not in words_set and this_action != "?":  # 중복 체크
-                words_set.append(this_action)
+            if this_action not in words_list and this_action != "?":  # 중복 체크
+                words_list.append(this_action)
 
             cv2.putText(img, "now: "+ str(this_action), (x_word,y_word), fontFace, fontScale, color, thickness)
 
 
     cv2.putText(img, "now: ", (x_word,y_word), fontFace, fontScale, color, thickness)
-    words_string = ", ".join(map(str, words_set))
-    cv2.putText(img, words_string, (x_word_set,y_word_set), fontFace, fontScale, color, thickness)
+    words_string = ", ".join(map(str, words_list))
+    cv2.putText(img, words_string, (x_word_list,y_word_list), fontFace, fontScale, color, thickness)
 
     cv2.imshow('img', img)
     if cv2.waitKey(1) == ord('q'):
