@@ -57,8 +57,8 @@ app.config['SECRET_KEY'] = 'mysecret'
 socketio = SocketIO(app,cors_allowed_origins="*")
 
 @app.route('/')
-def hello_world():
-    return ''
+def home():
+    return "<h1>AI Server</h1>"
 
 @socketio.on('connect')
 def create_session():
@@ -95,11 +95,11 @@ def handle_predict(data):
             action = i_pred
             action_seq.append(action)
 
-            if len(action_seq) < 15:
+            if len(action_seq) < 11:
                 continue
 
             this_action = '?'
-            if action_seq[-1] == action_seq[-2] == action_seq[-3] == action_seq[-4] == action_seq[-5] == action_seq[-6] == action_seq[-7] == action_seq[-8] == action_seq[-9] == action_seq[-10] == action_seq[-11] == action_seq[-12] == action_seq[-13] == action_seq[-14] == action_seq[-15]:
+            if action_seq[-1] == action_seq[-2] == action_seq[-3] == action_seq[-4] == action_seq[-5] == action_seq[-6] == action_seq[-7] == action_seq[-8] == action_seq[-9] == action_seq[-10] == action_seq[-11]:
                 this_action = action
 
             if this_action not in id_list and this_action != "?":  # 중복 체크
