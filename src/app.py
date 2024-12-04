@@ -1,12 +1,13 @@
-from flask import Flask, session
+from flask import Flask, session, request, jsonify
 from flask_socketio import SocketIO, emit
 import numpy as np
 import tensorflow as tf
 import mysql.connector
+from gpt import *
 
 seq_length = 30
 
-model = tf.keras.models.load_model('../../models/model.keras')
+model = tf.keras.models.load_model('./models/model.keras')
 
 def preprocess_data_server(res):
     joint = np.array([[lm['x'], lm['y'], lm['z']] for lm in res])
@@ -66,7 +67,7 @@ def create_session():
     session['id_list'] = []
     session['word_list'] = []
 
-# 클라이언트가 'predict' 이벤트로 데이터를 보낼 때 실행
+# 랜드마크 데이터 seq -> 수어 Id
 @socketio.on('predict')
 def handle_predict(data):
     seq = session['seq']
@@ -113,6 +114,15 @@ def handle_predict(data):
     except Exception as e:
         # 에러 발생 시 에러 메시지를 클라이언트에 전송
         emit('error', {'error': str(e)})
+
+# ['안녕하세요', '목', '아프다', '오다'] -> '안녕하세요, 목이 아파서 왔습니다.'
+@app.route('/makeSentence', methods=['POST'])
+def predict():
+    data = request.get_json() # 데이터 받기
+    prediction_list = data.get('prediction', [])
+    prediction_sentence = runGPT(prediction_list)
+    response = {'prediction_sentence': prediction_sentence}
+    return jsonify(response)
 
 # 서버 실행
 if __name__ == '__main__':

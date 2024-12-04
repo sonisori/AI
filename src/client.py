@@ -1,4 +1,5 @@
 import socketio
+import requests
 
 # Socket.IO 클라이언트 생성
 sio = socketio.Client()
@@ -64,3 +65,17 @@ def test_predict_event():
 sio.connect('http://localhost:5001')  # 서버 주소와 포트 설정
 test_predict_event()
 sio.wait()  # 서버의 응답을 계속 기다림
+
+# #GPT test
+# server_url = 'http://127.0.0.1:5001/makeSentence'
+#
+# data = {'prediction': ['안녕하세요', '목', '아프다', '오다']}
+#
+# # 데이터 전송
+# response = requests.post(server_url, json=data)
+#
+# # 응답 출력
+# if response.status_code == 200:
+#     print(response.json())
+# else:
+#     print(f"Error: {response.status_code}, {response.text}")
