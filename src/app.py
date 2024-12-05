@@ -115,12 +115,32 @@ def handle_predict(data):
         # 에러 발생 시 에러 메시지를 클라이언트에 전송
         emit('error', {'error': str(e)})
 
-# ['안녕하세요', '목', '아프다', '오다'] -> '안녕하세요, 목이 아파서 왔습니다.'
-@app.route('/makeSentence', methods=['POST'])
-def predict():
+# 단어리스트 -> 문장
+# e.g. ['안녕하세요', '목', '아프다', '오다'] -> '안녕하세요, 목이 아파서 왔습니다.'
+# 0: 평서문
+@app.route('/makeSentence0', methods=['POST'])
+def make_sentence0():
     data = request.get_json() # 데이터 받기
     prediction_list = data.get('prediction', [])
-    prediction_sentence = runGPT(prediction_list)
+    prediction_sentence = runGPT(prediction_list,0)
+    response = {'prediction_sentence': prediction_sentence}
+    return jsonify(response)
+
+# 1: 의문문
+@app.route('/makeSentence1', methods=['POST'])
+def make_sentence1():
+    data = request.get_json() # 데이터 받기
+    prediction_list = data.get('prediction', [])
+    prediction_sentence = runGPT(prediction_list,1)
+    response = {'prediction_sentence': prediction_sentence}
+    return jsonify(response)
+
+# 2: 감탄문
+@app.route('/makeSentence2', methods=['POST'])
+def make_sentence2():
+    data = request.get_json() # 데이터 받기
+    prediction_list = data.get('prediction', [])
+    prediction_sentence = runGPT(prediction_list,2)
     response = {'prediction_sentence': prediction_sentence}
     return jsonify(response)
 
