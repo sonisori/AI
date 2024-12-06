@@ -106,11 +106,11 @@ def handle_predict(data):
             action = i_pred
             action_seq.append(action)
 
-            if len(action_seq) < 11:
+            if len(action_seq) < 10:
                 continue
 
             this_action = '?'
-            if action_seq[-1] == action_seq[-2] == action_seq[-3] == action_seq[-4] == action_seq[-5] == action_seq[-6] == action_seq[-7] == action_seq[-8] == action_seq[-9] == action_seq[-10] == action_seq[-11]:
+            if action_seq[-1] == action_seq[-2] == action_seq[-3] == action_seq[-4] == action_seq[-5] == action_seq[-6] == action_seq[-7] == action_seq[-8] == action_seq[-9]:
                 this_action = action
 
             if this_action not in id_list and this_action != "?":  # 중복 체크
