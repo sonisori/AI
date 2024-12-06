@@ -2,8 +2,12 @@ from flask import Flask, session, request, jsonify
 from flask_socketio import SocketIO, emit
 import numpy as np
 import tensorflow as tf
-import mysql.connector
+import pymysql
+from dotenv import load_dotenv
+import os
 from gpt import *
+
+load_dotenv()
 
 seq_length = 30
 
@@ -31,25 +35,32 @@ def preprocess_data_server(res):
 
     return d
 
-def get_words_by_ids(id_list):
-    connection = mysql.connector.connect(
-        host='your_host',  # 예: 'localhost' 또는 '127.0.0.1'
-        user='your_user',  # 사용자 이름
-        password='your_password',  # 비밀번호
-        database='sonisori'  # 데이터베이스 이름
-    )
+def get_words_by_ids(index):
+    db_config = {
+        "host": os.getenv("DB_HOST"),
+        "user": os.getenv("DB_USER"),
+        "password": os.getenv("DB_PASSWORD"),
+        "database": os.getenv("DB_NAME"),
+    }
+    connection = pymysql.connect(**db_config)
+    index = index+1
+    try:
+        cursor = connection.cursor()
 
-    cursor = connection.cursor()
+        query = "SELECT word FROM sign_words WHERE id = %s;"
+        cursor.execute(query, (index,))
 
-    id_tuple = tuple(id_list)
-    query = f"SELECT id, word FROM sign_words WHERE id IN ({','.join(['%s'] * len(id_tuple))})"
-    cursor.execute(query, id_tuple)
-    result = {row[0]: row[1] for row in cursor.fetchall()}
+        result = cursor.fetchone()
 
-    cursor.close()
-    connection.close()
+        return result[0] if result else None
 
-    return [result.get(id_value, None) for id_value in id_list]
+    except pymysql.MySQLError as e:
+        print(f"Database error: {e}")
+        return None
+
+    finally:
+        if connection:
+            connection.close()
 
 # Flask 및 SocketIO 설정
 app = Flask(__name__)
@@ -104,12 +115,13 @@ def handle_predict(data):
 
             if this_action not in id_list and this_action != "?":  # 중복 체크
                 id_list.append(this_action)
-                # word_list = get_words_by_ids(id_list)
+                this_word = get_words_by_ids(this_action)
+                word_list.append(this_word)
                 # 예측 결과를 리스트로 변환 후 클라이언트에게 전송
-                emit('prediction_result', {'prediction': id_list,'appended':this_action}) # $$$
-                # emit('prediction_result', {'prediction': word_list,'appended':this_action}) # ***
-        print("result: ", id_list) # $$$
-        # print("result: ", word_list) # ***
+                # emit('prediction_result', {'prediction': id_list,'appended':this_action}) # $$$
+                emit('prediction_result', {'prediction': word_list,'appended':this_action}) # ***
+        # print("result: ", id_list) # $$$
+        print("result: ", word_list) # ***
 
     except Exception as e:
         # 에러 발생 시 에러 메시지를 클라이언트에 전송
@@ -146,4 +158,4 @@ def make_sentence2():
 
 # 서버 실행
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5001, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(app, host='0.0.0.0', port=5002, debug=True, allow_unsafe_werkzeug=True)
