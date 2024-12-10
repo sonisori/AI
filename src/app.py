@@ -35,7 +35,7 @@ def preprocess_data_server(res):
 
     return d
 
-def get_words_by_ids(index):
+def get_word_by_id(index):
     db_config = {
         "host": os.getenv("DB_HOST"),
         "user": os.getenv("DB_USER"),
@@ -48,6 +48,32 @@ def get_words_by_ids(index):
         cursor = connection.cursor()
 
         query = "SELECT word FROM sign_words WHERE id = %s;"
+        cursor.execute(query, (index,))
+
+        result = cursor.fetchone()
+
+        return result[0] if result else None
+
+    except pymysql.MySQLError as e:
+        print(f"Database error: {e}")
+        return None
+
+    finally:
+        if connection:
+            connection.close()
+# print(get_word_by_id(0))
+def get_quiz_by_id(index):
+    db_config = {
+        "host": os.getenv("DB_HOST"),
+        "user": os.getenv("DB_USER"),
+        "password": os.getenv("DB_PASSWORD"),
+        "database": os.getenv("DB_NAME"),
+    }
+    connection = pymysql.connect(**db_config)
+    try:
+        cursor = connection.cursor()
+
+        query = "SELECT sentence FROM sign_quizzes WHERE id = %s;"
         cursor.execute(query, (index,))
 
         result = cursor.fetchone()
@@ -115,7 +141,7 @@ def handle_predict(data):
 
             if this_action not in id_list and this_action != "?":  # 중복 체크
                 id_list.append(this_action)
-                this_word = get_words_by_ids(this_action)
+                this_word = get_word_by_id(this_action)
                 word_list.append(this_word)
                 # 예측 결과를 리스트로 변환 후 클라이언트에게 전송
                 # emit('prediction_result', {'prediction': id_list,'appended':this_action}) # $$$
@@ -134,7 +160,7 @@ def handle_predict(data):
 def make_sentence0():
     data = request.get_json() # 데이터 받기
     prediction_list = data.get('prediction', [])
-    prediction_sentence = runGPT(prediction_list,0)
+    prediction_sentence = gpt_make_sentence(prediction_list,0)
     response = {'prediction_sentence': prediction_sentence}
     return jsonify(response)
 
@@ -143,7 +169,7 @@ def make_sentence0():
 def make_sentence1():
     data = request.get_json() # 데이터 받기
     prediction_list = data.get('prediction', [])
-    prediction_sentence = runGPT(prediction_list,1)
+    prediction_sentence = gpt_make_sentence(prediction_list,1)
     response = {'prediction_sentence': prediction_sentence}
     return jsonify(response)
 
@@ -152,9 +178,28 @@ def make_sentence1():
 def make_sentence2():
     data = request.get_json() # 데이터 받기
     prediction_list = data.get('prediction', [])
-    prediction_sentence = runGPT(prediction_list,2)
+    prediction_sentence = gpt_make_sentence(prediction_list,2)
     response = {'prediction_sentence': prediction_sentence}
     return jsonify(response)
+
+# 문장과 단어리스트가 의미적으로 동일한지 (예(1)/아니오(0))로 판단
+# e.g. "주택 담보 대출을 알아보려고 왔어요.", ["주택", "담보", "대출", "알아보다", "오다"] -> 예
+@app.route('/evaluateMeaning', methods=['POST'])
+def evaluate_meaning():
+    data = request.get_json() # 데이터 받기
+    prediction_list = data.get('prediction', [])
+    index = data.get('quiz_index', [])
+    quiz_sentence = get_quiz_by_id(index)
+
+    yes_or_no = gpt_evaluate_meaning(quiz_sentence, prediction_list)
+
+    if yes_or_no=="예":
+        return 1
+    elif yes_or_no=="아니오":
+        return 0
+    else:
+        print("error: Results other than Yes/No were output.")
+        return -1
 
 # 서버 실행
 if __name__ == '__main__':
