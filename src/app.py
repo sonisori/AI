@@ -3,11 +3,11 @@ from flask_socketio import SocketIO, emit
 import numpy as np
 import tensorflow as tf
 import pymysql
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 import os
 from gpt import *
 
-load_dotenv()
+# load_dotenv()
 
 seq_length = 30
 
@@ -37,10 +37,10 @@ def preprocess_data_server(res):
 
 def get_word_by_id(index):
     db_config = {
-        "host": os.getenv("DB_HOST"),
-        "user": os.getenv("DB_USER"),
-        "password": os.getenv("DB_PASSWORD"),
-        "database": os.getenv("DB_NAME"),
+        "host": os.environ.get("DB_HOST"),
+        "user": os.environ.get("DB_USER"),
+        "password": os.environ.get("DB_PASSWORD"),
+        "database": os.environ.get("DB_NAME"),
     }
     connection = pymysql.connect(**db_config)
     index = index+1
@@ -64,10 +64,10 @@ def get_word_by_id(index):
 # print(get_word_by_id(1))
 def get_quiz_by_id(index):
     db_config = {
-        "host": os.getenv("DB_HOST"),
-        "user": os.getenv("DB_USER"),
-        "password": os.getenv("DB_PASSWORD"),
-        "database": os.getenv("DB_NAME"),
+        "host": os.environ.get("DB_HOST"),
+        "user": os.environ.get("DB_USER"),
+        "password": os.environ.get("DB_PASSWORD"),
+        "database": os.environ.get("DB_NAME"),
     }
     connection = pymysql.connect(**db_config)
     try:

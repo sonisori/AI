@@ -1,5 +1,5 @@
 from openai import OpenAI
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 import os
 
 def gpt_make_sentence(words_list, senType):
@@ -10,9 +10,9 @@ def gpt_make_sentence(words_list, senType):
     elif senType == 2:
         sentence_type = "감탄문"
 
-    load_dotenv()
+    # load_dotenv()
 
-    gpt_key = os.getenv('GPT_KEY')
+    gpt_key = os.environ.get('GPT_KEY')
     client = OpenAI(api_key= gpt_key)
 
     response = client.chat.completions.create(
@@ -32,9 +32,10 @@ def gpt_make_sentence(words_list, senType):
     return result
 
 def gpt_evaluate_meaning(sentence, words_list):
-    load_dotenv()
+    # load_dotenv()
 
-    gpt_key = os.getenv('GPT_KEY')
+
+    gpt_key = os.environ.get('GPT_KEY')
     client = OpenAI(api_key= gpt_key)
 
     response = client.chat.completions.create(
