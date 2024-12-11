@@ -61,7 +61,7 @@ def get_word_by_id(index):
     finally:
         if connection:
             connection.close()
-# print(get_word_by_id(0))
+# print(get_word_by_id(1))
 def get_quiz_by_id(index):
     db_config = {
         "host": os.getenv("DB_HOST"),
@@ -189,17 +189,17 @@ def evaluate_meaning():
     data = request.get_json() # 데이터 받기
     prediction_list = data.get('prediction', [])
     index = data.get('quiz_index', [])
+
     quiz_sentence = get_quiz_by_id(index)
 
-    yes_or_no = gpt_evaluate_meaning(quiz_sentence, prediction_list)
-
-    if yes_or_no=="예":
-        return 1
-    elif yes_or_no=="아니오":
-        return 0
+    result = gpt_evaluate_meaning(quiz_sentence, prediction_list)
+    response = {'result': result}
+    if result=="예":
+        return jsonify(response)
+    elif result=="아니오":
+        return jsonify(response)
     else:
-        print("error: Results other than Yes/No were output.")
-        return -1
+        return jsonify({'error': 'Results other than Yes/No were output.'}), 400
 
 # 서버 실행
 if __name__ == '__main__':

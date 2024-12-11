@@ -67,49 +67,49 @@
 # sio.wait()  # 서버의 응답을 계속 기다림
 
 
-####### test 2: gpt_make_sentence
-# server_url = 'http://127.0.0.1:5002/makeSentence1'
+# ###### test 2: gpt_make_sentence
+# import requests
+# import json
+# #
+# # # 서버의 URL (서버가 실행 중이어야 합니다.)
+# url = 'http://localhost:5002/makeSentence0'  # 서버의 URL을 실제 URL로 바꿔주세요
 #
-# data = {'prediction': ['안녕하세요', '목', '아프다', '오다']}
+# # 테스트 데이터 예시
+# data = {
+#     "prediction": ["안녕하세요", "목", "아프다", "오다"]
+# }
 #
-# # 데이터 전송
-# response = requests.post(server_url, json=data)
+# # POST 요청 보내기
+# response = requests.post(url, json=data)
 #
-# # 응답 출력
+# # 응답 결과 출력
 # if response.status_code == 200:
-#     print(response.json())
+#     result = response.json()  # 응답 데이터 JSON 파싱
+#     print("응답 결과:", result)
 # else:
-#     print(f"Error: {response.status_code}, {response.text}")
+#     print(f"요청 실패. 상태 코드: {response.status_code}")
 
 ####### test 3: gpt_evaluate_meaning
+
 import requests
+import json
 
-# 서버 URL 설정
-url = 'http://127.0.0.1:5002/evaluateMeaning'
+# 서버의 URL (서버가 실행 중이어야 합니다.)
+url = 'http://localhost:5002/evaluateMeaning'  # 서버의 URL을 실제 URL로 바꿔주세요
 
-# 테스트 데이터
+# 테스트 데이터 예시
 data = {
-    "prediction": ["안녕하세요", "목", "아프다", "오다"],
-    "quiz_index": 2
+    "prediction": ["주택", "담보", "대출", "알아보다", "오다"],  # 예시 단어 리스트
+    "quiz_index": 12  # 퀴즈 ID (데이터베이스나 파일에서 퀴즈 정보를 가져오는 인덱스 값)
 }
 
-try:
-    # POST 요청 보내기
-    response = requests.post(url, json=data)
+# POST 요청 보내기
+response = requests.post(url, json=data)
 
-    # 응답 처리
-    if response.status_code == 200:
-        result = response.json()
-        if result == 1:
-            print("Result: Yes")
-        elif result == 0:
-            print("Result: No")
-        else:
-            print("Unexpected result:", result)
-    else:
-        print(f"Request failed with status code: {response.status_code}")
-        print("Error message:", response.text)
-
-except Exception as e:
-    print("Error occurred while sending request:", str(e))
+# 응답 결과 출력
+if response.status_code == 200:
+    result = response.json()  # 응답 데이터 JSON 파싱
+    print("응답 결과:", result)
+else:
+    print(f"요청 실패. 상태 코드: {response.status_code}")
 
