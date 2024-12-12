@@ -28,4 +28,12 @@ jobs:
             docker pull ${{ secrets.DOCKER_USERNAME }}/sonisori-ai-server:latest
             docker stop sonisori-ai-container || true
             docker rm sonisori-ai-container || true 
-            docker run -d --name sonisori-ai-container -p 5002:5002 ${{ secrets.DOCKER_USERNAME }}/sonisori-ai-server:latest
+            docker run -d \
+            --name sonisori-ai-container \
+            -p 5002:5002 \
+            -e GPT_KEY=${{ secrets.GPT_KEY }} \
+            -e DB_HOST=${{ secrets.DB_HOST }} \
+            -e DB_USER=${{ secrets.DB_USER }} \
+            -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+            -e DB_NAME=${{ secrets.DB_NAME }} \
+            ${{ secrets.DOCKER_USERNAME }}/sonisori-ai-server:latest
