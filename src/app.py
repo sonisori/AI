@@ -6,6 +6,7 @@ import pymysql
 # from dotenv import load_dotenv
 import os
 from gpt import *
+from flask_cors import CORS
 
 # load_dotenv()
 
@@ -92,6 +93,8 @@ def get_quiz_by_id(index):
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'mysecret'
 socketio = SocketIO(app,cors_allowed_origins="*")
+
+CORS(app)
 
 @app.route('/')
 def home():
