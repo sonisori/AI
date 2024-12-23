@@ -90,7 +90,7 @@ while cap.isOpened(): # 카메라 열려 있는 동안
                 continue
 
             this_action = '?'
-            if action_seq[-1] == action_seq[-2] == action_seq[-3] == action_seq[-4] == action_seq[-5] == action_seq[-6] == action_seq[-7] == action_seq[-8] == action_seq[-9] == action_seq[-10] == action_seq[-11]:
+            if action_seq[-1] == action_seq[-2] == action_seq[-3] == action_seq[-4] == action_seq[-5] == action_seq[-6] == action_seq[-7] == action_seq[-8]:
                 this_action = action
 
             if this_action not in words_list and this_action != "?":  # 중복 체크
