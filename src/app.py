@@ -107,6 +107,8 @@ def create_session():
     session['id_list'] = []
     session['word_list'] = []
 
+last_time_ms = 0
+
 # 랜드마크 데이터 seq -> 수어 Id
 @socketio.on('predict')
 def handle_predict(data):
@@ -116,48 +118,57 @@ def handle_predict(data):
     word_list = session['word_list']
 
     print("data:",data)
-    landmarks = data["landmarks"]
 
-    try:
-        for d in landmarks:
-            d = preprocess_data_server(d)
-            seq.append(d)
+    global last_time_ms
+    current_time_ms = data["time"]
 
-            if len(seq) < seq_length:
-                continue
+    if current_time_ms - last_time_ms > 100:
+        landmarks = data["landmarks"]
 
-            input_data = np.expand_dims(np.array(seq[-seq_length:], dtype=np.float32), axis=0)
+        try:
+            for d in landmarks:
+                d = preprocess_data_server(d)
+                seq.append(d)
 
-            y_pred = model.predict(input_data).squeeze()
-            i_pred = int(np.argmax(y_pred))
-            conf = y_pred[i_pred]
+                if len(seq) < seq_length:
+                    continue
 
-            if conf < 0.8:
-                continue
+                input_data = np.expand_dims(np.array(seq[-seq_length:], dtype=np.float32), axis=0)
 
-            action = i_pred
-            action_seq.append(action)
+                y_pred = model.predict(input_data).squeeze()
+                i_pred = int(np.argmax(y_pred))
+                conf = y_pred[i_pred]
 
-            if len(action_seq) < 10:
-                continue
+                if conf < 0.8:
+                    continue
 
-            this_action = '?'
-            if action_seq[-1] == action_seq[-2] == action_seq[-3] == action_seq[-4] == action_seq[-5] == action_seq[-6] == action_seq[-7] == action_seq[-8]:
-                this_action = action
+                action = i_pred
+                action_seq.append(action)
 
-            if this_action not in id_list and this_action != "?":  # 중복 체크
-                id_list.append(this_action)
-                this_word = get_word_by_id(this_action)
-                word_list.append(this_word)
-                # 예측 결과를 리스트로 변환 후 클라이언트에게 전송
-                # emit('prediction_result', {'prediction': id_list,'appended':this_action}) # $$$
-                emit('prediction_result', {'prediction': word_list,'appended':this_action}) # ***
-        # print("result: ", id_list) # $$$
-        print("result: ", word_list) # ***
+                if len(action_seq) < 10:
+                    continue
 
-    except Exception as e:
-        # 에러 발생 시 에러 메시지를 클라이언트에 전송
-        emit('error', {'error': str(e)})
+                this_action = '?'
+                if action_seq[-1] == action_seq[-2] == action_seq[-3] == action_seq[-4] == action_seq[-5] == action_seq[
+                    -6] == action_seq[-7] == action_seq[-8]:
+                    this_action = action
+
+                if this_action not in id_list and this_action != "?":  # 중복 체크
+                    id_list.append(this_action)
+                    this_word = get_word_by_id(this_action)
+                    word_list.append(this_word)
+                    # 예측 결과를 리스트로 변환 후 클라이언트에게 전송
+                    # emit('prediction_result', {'prediction': id_list,'appended':this_action}) # $$$
+                    emit('prediction_result', {'prediction': word_list, 'appended': this_action})  # ***
+            # print("result: ", id_list) # $$$
+            print("result: ", word_list)  # ***
+
+        except Exception as e:
+            # 에러 발생 시 에러 메시지를 클라이언트에 전송
+            emit('error', {'error': str(e)})
+
+        last_time_ms = current_time_ms
+
 
 # 단어리스트 -> 문장
 # e.g. ['안녕하세요', '목', '아프다', '오다'] -> '안녕하세요, 목이 아파서 왔습니다.'

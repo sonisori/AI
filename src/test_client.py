@@ -82,7 +82,6 @@ def test_predict_event():
                 data = convert_landmarks_to_json(res,current_time_ms)
                 print(data)
                 # here!! #
-                landmarks = data["landmarks"]
                 sio.emit('predict', data)
 
         cv2.imshow('img', img)
